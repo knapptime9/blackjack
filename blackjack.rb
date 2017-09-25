@@ -28,10 +28,11 @@ class Game
 
 
   def show_cards(player,hide_card) #method instructing app to reveal hidden cards
-    @deck[player].show(hide_card)
+    @deck.hands[player].show(hide_card)
   end
 
   def deal #deal cards to player/dealer
+    @deck.create_seats(1)
 
     @wager_amount = 0
     until @wager_amount >= @min_bet && @wager_amount <= @wallet.balance #fhec
@@ -151,7 +152,7 @@ class Wallet
     print "Wager: $#{@wager_amount}"
   end
 
-  def add(winnnings)
+  def add(winnings)
     @balance += winnings.to_i
   end
 
@@ -159,6 +160,19 @@ class Wallet
     print " | Bankroll: $#{@balance}"
   end
 
+  def create_player()   #create instances for 2 players(user & dealer)
+    @player = [*0..1]   #@instanced variable (0 is user, 1 is dealer)
+    @hands = []         #empty array for cards belonging to each player
+
+    for turn in 1..2     #loop for initial deal
+      for player in 0..1  #initial deal loop cycle #if at first turn of loop,
+        @hands[player] = Hand.new if turn == 1  #initialize new hand
+        @hands[player].add_card(deal)       # add new card to player's hand
+        @hands[player].value                # recalculate new hand total
+      end
+    end
+
+  end
 end    #END OF GAME CLASS
 
 class Hand
@@ -220,64 +234,6 @@ class Hand
 
 end
 
-class Hand
-  attr_reader :hand, :value, :blackjack
-
-  def initialize
-    @hand = []
-    @blackjack = false
-  end
-
-  def add_card(dealt_card)
-    @hand << dealt_card
-    value
-  end
-
-  def show(hide_card)
-    @hide_card = hide_card
-    @hand.each do |card|
-      if @hide_card == true
-        print '[hidden card] '
-        @hide_card = false
-      else
-        print "[#{card.face} of #{card.suit}] "
-      end
-    end
-
-    if hide_card == false
-      print "| Value: #{@value} "
-      print "- BLACKJACK!" if @blackjack == true
-      print '- BUST!' if @value > 21
-    end
-
-  end
-
-  def value
-    @face_value_pair = {'ace'=>[1,11],'2'=>2,'3'=>3,'4'=>4,'5'=>5,'6'=>6,'7'=>7,
-      '8'=>8,'9'=>9,'10'=>10,'jack'=>10,'queen'=>10,'king'=>10}
-
-    bust = false
-    2.times do
-      @value = 0
-      @hand.each do |card|
-        if card.face != 'ace'
-          @value += @face_value_pair[card.face]
-        else
-          @value += 1
-          @value += 10 if (@value + 10) <= 21 && bust == false
-        end
-        bust = true if @value > 21
-      end
-    end
-
-    if @value == 21 && @hand.length == 2
-      @blackjack = true
-    end
-
-    @value
-  end
-
-end
 
 
 #Begin list of defined clssses for various
@@ -294,18 +250,18 @@ end
 class Deck                 #Begin defining class for deck of 52 cards
   attr_reader :deck, :hands
 
-  def initialize()       #initialize new deck w/ deck.new
+  def initialize       #initialize new deck w/ deck.new
     @suits = ['clubs','diamonds','hearts','spades']
     @faces = ['ace','2','3','4','5','6','7','8','9','10','jack','queen','king']
     @deck = []
 
-      deck do      #iterate through each array to create new deck of 52 cards
+       1.times do    #iterate through each array to create new deck of 52 cards
         @suits.each do |suit|  #iterate 4 times, once per suit
           @faces.each do |face| #iterate 14 times for each card.
             @deck << Card.new(suit, face) #1 loop=(1suit x14faces)*all 4 suits
+            end
           end
         end
-      end
 
     @deck    #pass out instanced @deck variable
   end
@@ -319,20 +275,19 @@ class Deck                 #Begin defining class for deck of 52 cards
       @dealt_card         #pass out @dealt_card var
     end
 
-#-------------------------------------------------------------------------------
-def create_player()   #create instances for 2 players(user & dealer)
-  @player = [*0..1]   #@instanced variable (0 is user, 1 is dealer)
-  @hands = []         #empty array for cards belonging to each player
+    def create_seats(number_seats)
+      @seats = [*0...number_seats]
+      @hands = []
 
-  for turn in 1..2     #loop for initial deal
-    for player in 0..1  #initial deal loop cycle #if at first turn of loop,
-      @hands[player] = Hand.new if turn == 1  #initialize new hand
-      @hands[player].add_card(deal)       # add new card to player's hand
-      @hands[player].value                # recalculate new hand total
+      for turn in 1..2
+        for seat in 0..number_seats
+          @hands[seat] = Hand.new if turn == 1
+          @hands[seat].add_card(deal)
+          @hands[seat].value
+        end
+      end
     end
-  end
-
-end
+#-------------------------------------------------------------------------------
 
   def shuffle
     @deck = deck.shuffle
@@ -351,4 +306,65 @@ Game.new
 
 # def shuffle # def mthd to call shuffle mid-game and pass @deck back out
 #   @deck = @deck.shuffle
+# end
+
+
+
+# class Hand
+#   attr_reader :hand, :value, :blackjack
+#
+#   def initialize
+#     @hand = []
+#     @blackjack = false
+#   end
+#
+#   def add_card(dealt_card)
+#     @hand << dealt_card
+#     value
+#   end
+#
+#   def show(hide_card)
+#     @hide_card = hide_card
+#     @hand.each do |card|
+#       if @hide_card == true
+#         print '[hidden card] '
+#         @hide_card = false
+#       else
+#         print "[#{card.face} of #{card.suit}] "
+#       end
+#     end
+#
+#     if hide_card == false
+#       print "| Value: #{@value} "
+#       print "- BLACKJACK!" if @blackjack == true
+#       print '- BUST!' if @value > 21
+#     end
+#
+#   end
+#
+#   def value
+#     @face_value_pair = {'ace'=>[1,11],'2'=>2,'3'=>3,'4'=>4,'5'=>5,'6'=>6,'7'=>7,
+#       '8'=>8,'9'=>9,'10'=>10,'jack'=>10,'queen'=>10,'king'=>10}
+#
+#     bust = false
+#     2.times do
+#       @value = 0
+#       @hand.each do |card|
+#         if card.face != 'ace'
+#           @value += @face_value_pair[card.face]
+#         else
+#           @value += 1
+#           @value += 10 if (@value + 10) <= 21 && bust == false
+#         end
+#         bust = true if @value > 21
+#       end
+#     end
+#
+#     if @value == 21 && @hand.length == 2
+#       @blackjack = true
+#     end
+#
+#     @value
+#   end
+#
 # end
